@@ -1,0 +1,76 @@
+This script is a well-structured resume parser using PyMuPDF (fitz) and regex, customized to extract structured data like name, phone number, email, region, education, and graduation year from PDF resumes stored in a folder.
+
+✅ Here's what the script does well:
+Extracts names from filenames while stripping common resume terms (like "cv", "2023", "jan", etc.).
+
+Searches for phone numbers, emails, education levels, and graduation years using regex.
+
+Filters regions based on a predefined list of Bahraini cities.
+
+Returns a clean Pandas DataFrame and saves it to Excel.
+
+🛠 Suggestions for Enhancement
+1. Phone Number Regex Improvement
+Current regex:
+
+python
+Copy
+Edit
+r"(\+973\s*\d{6,8}|\d{8})"
+⚠️ This may incorrectly capture unrelated 8-digit sequences. Improve accuracy:
+
+python
+Copy
+Edit
+r"(?:(?:\+973|00973)[\s-]?)?\d{8}"
+2. Support for Multiple Emails
+If a resume contains more than one email, and you want the primary one:
+
+python
+Copy
+Edit
+emails = re.findall(r"[\w\.-]+@[\w\.-]+", text)
+email = emails[0] if emails else ""
+3. Standardize Education Extraction
+Right now, partial matches (e.g., “Bachelors” instead of “Bachelor”) may be missed. Use regex with word boundaries:
+
+python
+Copy
+Edit
+edu_match = [kw for kw in education_keywords if re.search(rf'\b{kw}\b', text, flags=re.IGNORECASE)]
+4. Graduation Year Prioritization
+If you want only the most recent year:
+
+python
+Copy
+Edit
+graduation_year = max(grad_years) if grad_years else ""
+5. Optional Logging for Debugging
+Add simple print statements or logging to track issues:
+
+python
+Copy
+Edit
+print(f"Processed: {filename} | Name: {name}, Email: {email}")
+6. Handle Empty or Corrupted PDFs Gracefully
+Wrap PDF reading in try-except:
+
+python
+Copy
+Edit
+try:
+    text = extract_text_from_pdf(full_path)
+except Exception as e:
+    print(f"❌ Failed to process {filename}: {e}")
+    continue
+🧪 Bonus: Add CLI Support (Optional)
+Let the user provide the folder path via command line:
+
+python
+Copy
+Edit
+import sys
+if __name__ == "__main__":
+    folder = sys.argv[1] if len(sys.argv) > 1 else "resumes"
+    df = process_resumes(folder)
+    df.to_excel("Extracted_Resume_Data.xlsx", index=False)
