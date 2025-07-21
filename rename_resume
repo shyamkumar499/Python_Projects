@@ -1,0 +1,81 @@
+Step-by-Step Enhancements
+📍 1. Sample Additions to extract_info(...)
+Here’s the updated extract_info function with all the new NER capabilities:
+
+python
+Copy
+Edit
+def extract_info(text, filename):
+    doc = nlp(text)
+
+    name = extract_name_spacy(doc) or extract_name_from_filename(filename)
+
+    phone_match = re.search(r"(\+973[\s-]?\d{7,8}|\b\d{8}\b)", text)
+    phone = phone_match.group(1) if phone_match else ""
+
+    email_match = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", text)
+    email = email_match.group() if email_match else ""
+
+    region = extract_location_nlp(doc) or next((region for region in region_keywords if region.lower() in text.lower()), "")
+
+    education = extract_education_nlp(text)
+    if not education:
+        edu_match = [word for word in education_keywords if word.lower() in text.lower()]
+        education = "; ".join(set(edu_match)) if edu_match else ""
+
+    grad_years = re.findall(r"\b(19|20)\d{2}\b", text)
+    graduation_year = ", ".join(sorted(set(grad_years))) if grad_years else ""
+
+    experience_years = extract_experience_years(text)
+    skills = extract_skills(text)
+    job_titles = extract_job_titles(text)
+
+    return {
+        'Name': name,
+        'Phone': phone,
+        'Email': email,
+        'Region': region,
+        'Education': education,
+        'Graduation Year': graduation_year,
+        'Experience (Years)': experience_years,
+        'Skills': skills,
+        'Job Titles': job_titles
+    }
+🧠 2. Extract Experience (Years)
+python
+Copy
+Edit
+def extract_experience_years(text):
+    match = re.search(r'(\d+)\+?\s*(years|yrs)\s+(of\s+)?experience', text, re.IGNORECASE)
+    return match.group(1) if match else ""
+💼 3. Extract Job Titles (via rule + NER hybrid)
+python
+Copy
+Edit
+job_title_keywords = [
+    "software engineer", "developer", "data analyst", "project manager",
+    "data scientist", "consultant", "intern", "tester", "qa engineer", "business analyst"
+]
+
+def extract_job_titles(text):
+    matches = []
+    for title in job_title_keywords:
+        if re.search(rf"\b{title}\b", text, re.IGNORECASE):
+            matches.append(title.title())
+    return "; ".join(set(matches)) if matches else ""
+🛠️ 4. Extract Skills (Keyword-based for now)
+python
+Copy
+Edit
+common_skills = [
+    "Python", "Java", "C++", "SQL", "Excel", "JavaScript", "HTML", "CSS", 
+    "Pandas", "NumPy", "TensorFlow", "React", "Node.js", "Git", "AWS", "Azure", "Docker"
+]
+
+def extract_skills(text):
+    skills_found = [skill for skill in common_skills if re.search(rf"\b{skill}\b", text, re.IGNORECASE)]
+    return "; ".join(set(skills_found)) if skills_found else ""
+📊 Sample Final Output (Now Includes)
+Name	Phone	Email	Education	Grad Year	Experience (Years)	Skills	Job Titles
+Alice Kumar	+97312345678	alice@xyz.com	BTech	2019	3	Python; SQL; Git	Software Engineer
+
